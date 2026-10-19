@@ -1,0 +1,143 @@
+name: Build Proxy Toggle Linux x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Proxy Toggle Linux x64
+    # ubuntu-24.04 = mesma base do Linux Mint 22.3 (glibc 2.39),
+    # garantindo que o .deb e o binário rodem neste dispositivo.
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ============================================================
+      # 1. CHECKOUT
+      # ============================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ============================================================
+      # 2. DEPENDÊNCIAS DE BUILD DO TAURI V2 (LINUX)
+      # ============================================================
+      - name: Install Linux build dependencies
+        run: |
+          set -eux
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      # ============================================================
+      # 3. NODE + PNPM
+      # ============================================================
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # ============================================================
+      # 4. RUST
+      # ============================================================
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # ============================================================
+      # 5. FRONTEND (vite)
+      # ============================================================
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build
+
+      # ============================================================
+      # 6. TESTES DO RUST (valida a adaptação Linux)
+      # ============================================================
+      - name: Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # ============================================================
+      # 7. BUILD OFICIAL (Release + .deb)
+      # ============================================================
+      - name: Build Proxy Toggle (Release x64)
+        run: pnpm tauri build --bundles deb
+
+      # ============================================================
+      # 8. VERIFICAR O OUTPUT
+      # ============================================================
+      - name: Verify build output
+        run: |
+          set -eu
+          echo "=========================================="
+          echo "VERIFYING BUILD OUTPUT"
+          echo "=========================================="
+          echo ""
+          echo "Bundles gerados:"
+          find src-tauri/target/release/bundle -type f | sort
+
+          DEB=$(find src-tauri/target/release/bundle/deb -name '*.deb' -type f | head -n1)
+          if [ -z "$DEB" ]; then
+            echo "Nenhum .deb encontrado."
+            exit 1
+          fi
+          BIN=$(find src-tauri/target/release -maxdepth 1 -type f -executable ! -name '*.*' | head -n1)
+          if [ -z "$BIN" ]; then
+            echo "Binário não encontrado."
+            exit 1
+          fi
+
+          echo ""
+          echo "DEB: $DEB ($(stat -c%s "$DEB") bytes)"
+          echo "Binário: $BIN ($(stat -c%s "$BIN") bytes)"
+          echo ""
+          echo "Conteúdo do .deb:"
+          dpkg-deb -c "$DEB" | head -n 20
+          echo ""
+          echo "Dependências declaradas:"
+          dpkg-deb -f "$DEB" Package Version Architecture Depends
+
+          echo "DEB_PATH=$DEB" >> "$GITHUB_ENV"
+          echo "BIN_PATH=$BIN" >> "$GITHUB_ENV"
+
+      # ============================================================
+      # 9. UPLOAD DOS ARTEFATOS
+      # ============================================================
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: Proxy-Toggle-Linux-x64-deb
+          path: ${{ env.DEB_PATH }}
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Upload binário portátil
+        uses: actions/upload-artifact@v4
+        with:
+          name: Proxy-Toggle-Linux-x64-binario
+          path: ${{ env.BIN_PATH }}
+          if-no-files-found: error
+          compression-level: 0
