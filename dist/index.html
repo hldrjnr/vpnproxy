@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proxy Toggle</title>
+    <script type="module" crossorigin src="/assets/index-jF5HOn-5.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Dg7FcE6h.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="top">
+        <div class="brand">
+          <span class="dot" id="dot"></span>
+          <div>
+            <h1>Proxy Toggle</h1>
+            <p id="state-line">Desligado</p>
+          </div>
+        </div>
+        <span class="shield" id="admin-pill" title="Executando com privilégios de administrador">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 2.8v5.1c0 4.4-2.9 7.3-7 8.6-4.1-1.3-7-4.2-7-8.6V5.8z" />
+            <path d="M9 11.6l2.2 2.2 3.8-4" />
+          </svg>
+          Admin
+        </span>
+      </header>
+
+      <button class="power" id="power" type="button" aria-label="Ligar ou desligar o proxy">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round">
+          <path d="M12 3.5v7.5" />
+          <path d="M6.2 6.4a8 8 0 1 0 11.6 0" />
+        </svg>
+      </button>
+      <p class="power-label" id="power-label">Toque para ligar</p>
+
+      <section class="card">
+        <div class="fields">
+          <label class="grow">IP
+            <input id="host" type="text" value="10.71.145.245" spellcheck="false" autocomplete="off" />
+          </label>
+          <label class="port">Porta
+            <input id="port" type="number" value="8080" min="1" max="65535" />
+          </label>
+        </div>
+        <details class="adv">
+          <summary>Exceções</summary>
+          <input id="bypass" type="text" value="localhost;127.0.0.1;*.local" spellcheck="false" autocomplete="off" />
+        </details>
+      </section>
+
+      <section class="card">
+        <div class="net-head">
+          <span>Rede</span>
+          <span class="live"><i></i>agora</span>
+        </div>
+        <div class="rates">
+          <div class="rate">
+            <span class="dir down">↓</span>
+            <strong id="down">—</strong>
+            <em>download</em>
+          </div>
+          <div class="rate">
+            <span class="dir up">↑</span>
+            <strong id="up">—</strong>
+            <em>upload</em>
+          </div>
+        </div>
+        <canvas id="spark" width="328" height="60"></canvas>
+        <div class="net-meta">
+          <span id="ping" title="Latência (via proxy quando ligado)">—</span>
+          <span class="sep">·</span>
+          <span id="pubip">ip —</span>
+          <button class="icon-btn" id="net-refresh" type="button" title="Atualizar ping e IP">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <path d="M21 3v6h-6" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <p class="hint">Ao trocar o proxy, reabra os programas.<br />Minimizar oculta a app na bandeja.</p>
+      <p class="sig">feito por HldrJnr</p>
+      <div class="toast" id="toast"></div>
+    </main>
+  </body>
+</html>
